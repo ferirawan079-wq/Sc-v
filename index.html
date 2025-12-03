@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Link Scanner Pro</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Arial;
+        background: #e8eef5;
+        display: flex;
+        justify-content: center;
+        padding: 30px;
+        transition: .3s;
+    }
+
+    body.dark {
+        background: #0f0f0f;
+        color: white;
+    }
+
+    .card {
+        width: 90%;
+        max-width: 420px;
+        background: rgba(255,255,255,0.35);
+        backdrop-filter: blur(16px);
+        border-radius: 22px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        transition: .3s;
+    }
+
+    body.dark .card {
+        background: rgba(20,20,20,0.45);
+    }
+
+    .logo {
+        width: 90px;
+        margin-bottom: 10px;
+    }
+
+    input {
+        width: 100%;
+        padding: 14px;
+        border-radius: 14px;
+        border: none;
+        outline: none;
+        margin-top: 10px;
+        font-size: 16px;
+        background: rgba(255,255,255,0.85);
+    }
+
+    body.dark input {
+        background: rgba(0,0,0,0.35);
+        color: #fff;
+    }
+
+    button {
+        width: 100%;
+        padding: 14px;
+        margin-top: 15px;
+        background: #1ea0ff;
+        color: white;
+        border-radius: 14px;
+        border: none;
+        font-size: 17px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 6px 14px rgba(0,128,255,0.4);
+        transition: .2s;
+    }
+
+    button:active {
+        transform: scale(.97);
+    }
+
+    .theme {
+        margin-top: 15px;
+        font-size: 14px;
+        opacity: .7;
+        cursor: pointer;
+    }
+
+    #result {
+        margin-top: 18px;
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    /* iOS loading spinner */
+    .spinner {
+        margin: 15px auto 0;
+        width: 34px;
+        height: 34px;
+        border: 3px solid rgba(0,0,0,0.1);
+        border-top-color: #1ea0ff;
+        border-radius: 50%;
+        animation: spin 0.9s infinite linear;
+        display: none;
+    }
+
+    @keyframes spin {
+        100% { transform: rotate(360deg); }
+    }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <img src="https://pin.it/5eO6nIuLk" class="logo">
+
+    <h2>Link Scanner Pro</h2>
+    <p>Cek apakah sebuah link aman atau berbahaya. Di buat oleh Feryy untuk mengurangi korban yang membuka web yang berbahaya dan ilegal :by FeryCyber</p>
+
+    <input id="url" type="text" placeholder="Masukkan URL / Link">
+
+    <button onclick="scan()">🔍 Periksa Link</button>
+
+    <div class="spinner" id="loading"></div>
+
+    <div id="result"></div>
+
+    <div class="theme" onclick="toggleTheme()">
+        🌙 Ubah Tema (Gelap / Terang)
+    </div>
+</div>
+
+
+<script>
+const API_KEY = "46d3dcc03757067acb119c19967fafb72c5098cfd91fce0b9407b172051b508e";
+
+function toggleTheme() {
+    document.body.classList.toggle("dark");
+}
+
+async function scan() {
+    const url = document.getElementById("url").value;
+    const result = document.getElementById("result");
+    const loading = document.getElementById("loading");
+
+    if (!url) {
+        result.innerHTML = "Masukkan URL terlebih dahulu!";
+        return;
+    }
+
+    result.innerHTML = "";
+    loading.style.display = "block";
+
+    try {
+        // Step 1: Submit URL ke VirusTotal
+        const submit = await fetch("https://www.virustotal.com/api/v3/urls", {
+            method: "POST",
+            headers: { "x-apikey": API_KEY },
+            body: new URLSearchParams({ url: url })
+        });
+
+        const data = await submit.json();
+        const scan_id = data.data.id;
+
+        // Step 2: Ambil hasil scan
+        const scanRes = await fetch(
+            "https://www.virustotal.com/api/v3/analyses/" + scan_id,
+            { headers: { "x-apikey": API_KEY } }
+        );
+
+        const json = await scanRes.json();
+        const stats = json.data.attributes.stats;
+
+        loading.style.display = "none";
+
+        result.innerHTML = `
+            ✔ Aman: ${stats.harmless}<br>
+            ❗ Mencurigakan: ${stats.suspicious}<br>
+            ⚠ Berbahaya: ${stats.malicious}
+        `;
+    } catch (err) {
+        loading.style.display = "none";
+        result.innerHTML = "Gagal melakukan scan. Cek API key.";
+    }
+}
+</script>
+
+</body>
+</html>
